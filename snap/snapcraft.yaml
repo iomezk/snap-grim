@@ -1,0 +1,65 @@
+name: grim
+version: '1.4.1'
+summary: Screenshot utility for Wayland
+description: |
+  Grab images from any Wayland compositor which supports the screencopy protocol
+
+  grim [options...] [output-file]
+source-code: https://github.com/iomezk/snap-grim
+license: MIT
+base: core22
+confinement: strict
+grade: stable
+
+apps:
+  grim:
+    command-chain:
+    - wrapper
+    command: bin/grim
+    plugs:
+    - home
+    - removable-media
+    - wayland
+
+environment:
+  PATH: $SNAP/bin:$PATH
+  LD_LIBRARY_PATH: $SNAP/gui-lib/usr/lib/$SNAPCRAFT_ARCH_TRIPLET
+
+plugs:
+  gnome-42-2204:
+    interface: content
+    default-provider: gnome-42-2204
+    target: $SNAP/gui-lib
+
+parts:
+  local:
+    source: snap/local/
+    source-type: local
+    plugin: dump
+    prime:
+    - -patches/
+  grim:
+    after:
+    - local
+    source: https://git.sr.ht/~emersion/grim/archive/v1.4.1.tar.gz
+    source-checksum: sha256/5ed8e70fcd83a7e203e92d34dbb82a1342d3f13ad98a6b0310cc97e1a9342ded
+    source-type: tar
+    plugin: meson
+    meson-parameters:
+    - --buildtype=release
+    - --strip
+    - --prefix=/
+    - -Djpeg=enabled
+    - -Dman-pages=disabled
+    override-pull: |
+      craftctl default
+      patch -p1 -i ../../local/src/patches/grim-noshm.patch
+    build-packages:
+    - patch
+    - meson
+    - pkg-config
+    - libpng-dev
+    - libjpeg-dev
+    - libpixman-1-dev
+    - libwayland-dev
+    - wayland-protocols
